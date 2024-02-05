@@ -525,9 +525,13 @@ def create_keys():
     global private_key
     public_key, private_key = rsa.newkeys(1024)
     
+def create_root():
+    global root
+    root = ThemedTk(theme="equilux")
+    root.tk.call('tk', 'scaling', 1.5)
+    root.configure(bg="#464646")
 
 def main(addr):
-    global root
     global sock
 
     sock = socket.socket()
@@ -542,9 +546,7 @@ def main(addr):
         create_keys()
         send_key()
         recv_key()
-        root = ThemedTk(theme="equilux")
-        root.tk.call('tk', 'scaling', 1.5)
-        root.configure(bg="#464646")
+        create_root()
         create_style()
         show_main_page()
         root.mainloop()
