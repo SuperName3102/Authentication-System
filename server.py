@@ -1,3 +1,4 @@
+# 2024 © Idan Hazay
 import socket
 import random
 import traceback
