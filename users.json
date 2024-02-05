@@ -1,0 +1,82 @@
+{
+  "Test": {
+    "email": "idan@gmail.com",
+    "username": "Test",
+    "tz": "330909090",
+    "password": "$2b$12$d99W60jqsk8OzRdrwzwCaOJfT2IuyyxmT0mMGG/YibrG9cvY6ubra",
+    "salt": "$2b$12$d99W60jqsk8OzRdrwzwCaO",
+    "last_code": 852796,
+    "valid_until": "2024-01-30 21:56:28.239273",
+    "verified": true
+  },
+  "idan": {
+    "email": "idanh3102@gmail.com",
+    "username": "idan",
+    "tz": "330905159",
+    "password": "$2b$12$fzql8cnhRfXGHsuB5VG2VOnTJjUDy.CTyORcSVJ7vWghLQkJ8NuMi",
+    "salt": "$2b$12$fzql8cnhRfXGHsuB5VG2VO",
+    "last_code": 447418,
+    "valid_until": "2024-02-01 20:06:09.908649",
+    "verified": true
+  },
+  "idan12": {
+    "email": "t@t.c",
+    "username": "idan12",
+    "tz": "330905159",
+    "password": "$2b$12$M.fjcGROouNl6X2kVNy/.eDQxj0RNbXpXlPvGtzx.EvRGq9tJXK9.",
+    "salt": "$2b$12$M.fjcGROouNl6X2kVNy/.e",
+    "last_code": 355823,
+    "valid_until": "2024-01-30 22:08:20.796833",
+    "verified": false
+  },
+  "Balin": {
+    "email": "balininbar@gmail.com",
+    "username": "Balin",
+    "tz": "333333333",
+    "password": "$2b$12$ntjp3p9M9WphEUJDscOs6e5wCS5lva4n9kCq2AKEi4ZBPQ23oi/pq",
+    "salt": "$2b$12$ntjp3p9M9WphEUJDscOs6e",
+    "last_code": 386512,
+    "valid_until": "2024-01-30 22:09:12.313506",
+    "verified": true
+  },
+  "ophir": {
+    "email": "idanhsss@gmail.com",
+    "username": "ophir",
+    "tz": "333333333",
+    "password": "$2b$12$Brd6iBkWDBpJRIrB1/qkbu7Wb4z5KhLcx0TkfUQigg91zRbg4zCYu",
+    "salt": "$2b$12$Brd6iBkWDBpJRIrB1/qkbu",
+    "last_code": 933660,
+    "valid_until": "2024-02-01 09:14:44.412356",
+    "verified": false
+  },
+  "Test1": {
+    "email": "email@gmail.com",
+    "username": "Test1",
+    "tz": "330905159",
+    "password": "$2b$12$TZIrDCp/iy0cCJ6UYdHxe.oYd0BosBJdDVOskVAcsX4Y5TuT3zthS",
+    "salt": "$2b$12$TZIrDCp/iy0cCJ6UYdHxe.",
+    "last_code": 697199,
+    "valid_until": "2024-02-01 19:56:02.182705",
+    "verified": true
+  },
+  "ididid": {
+    "email": "em@gmail.com",
+    "username": "ididid",
+    "tz": "787878787",
+    "password": "$2b$12$9A.XGTw0/otrMQgQoi4eMOHTI1tCoCPFcjY1GyQvIy2lb4V/KEj1a",
+    "salt": "$2b$12$9A.XGTw0/otrMQgQoi4eMO",
+    "last_code": -1,
+    "valid_until": "2024-02-01 23:31:04.690337",
+    "verified": false
+  },
+  "tomtom": {
+    "email": "weitmantom@gmail.com",
+    "username": "tomtom",
+    "tz": "333333333",
+    "password": "$2b$12$Lj4z9vrvfvBlt5F4c8rnl.5bOf084z39wmYRSgpcu5sv9MVXJ/eEK",
+    "salt": "$2b$12$Lj4z9vrvfvBlt5F4c8rnl.",
+    "last_code": 820022,
+    "valid_until": "2024-02-04 09:41:44.843141",
+    "verified": true
+  }
+}
