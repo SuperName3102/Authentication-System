@@ -15,20 +15,22 @@ from datetime import datetime, timedelta
 import rsa
 import struct
 
-all_to_die = False  
-len_field = 4     
+all_to_die = False
+len_field = 4
 ceaser_shift = 5
 users_file = f"{os.path.dirname(os.path.abspath(__file__))}\\users.json"
 gmail = "idancyber3102@gmail.com"
 gmail_password = "nkjg eaom gzne nyfa"
-pepper = b"VerYGOdPePPErY"
+pepper = b"VerYGOdPePPEr"
 clients = {}
+
 
 class Client:
     def __init__(self, id, user, c_public_key):
         self.id = id
         self.user = user
         self.c_public_key = c_public_key
+
 
 class User:
     def __init__(self, email, username, tz, password):
@@ -45,11 +47,10 @@ class User:
         class_dict = {}
         class_variables = vars(self)
         for var_name, var_value in class_variables.items():
-            if(var_name == "password" or var_name == "salt"):
+            if (var_name == "password" or var_name == "salt"):
                 var_value = var_value.decode()
             class_dict[var_name] = var_value
         return class_dict
-        
 
     def to_json(self):
         return json.dumps(self.to_dict())
@@ -67,7 +68,7 @@ class User:
 
 
 def read_users():
-    if(not os.path.isfile(users_file)):
+    if (not os.path.isfile(users_file)):
         with open(users_file, 'w') as file:
             file.write("{}")
 
@@ -77,12 +78,14 @@ def read_users():
                 f.write("{}")
     with open(users_file, 'r') as file:
         existing_users = json.load(file)
-    
+
     return existing_users
+
 
 def update_users():
     with open(users_file, 'w') as file:
         json.dump(users, file, indent=2)
+
 
 def is_login_valid(username, password):
 
@@ -98,22 +101,26 @@ def user_exists(username):
     else:
         return False
 
+
 def email_registered(email):
     for user in users:
-        if(users[user]["email"] == email):
+        if (users[user]["email"] == email):
             return True
     return False
 
+
 def get_username_from_email(email):
     for user in users:
-        if(users[user]["email"] == email):
+        if (users[user]["email"] == email):
             return users[user]["username"]
+
 
 def send_reset_mail(email):
     code = random.randint(100000, 999999)
     username = get_username_from_email(email)
     users[username]['last_code'] = code
-    users[username]["valid_until"] = str(timedelta(minutes=10) + datetime.now())
+    users[username]["valid_until"] = str(
+        timedelta(minutes=10) + datetime.now())
     update_users()
     em = EmailMessage()
     em["From"] = gmail
@@ -123,31 +130,37 @@ def send_reset_mail(email):
     em.set_content(body)
     send_mail(em, email)
 
+
 def send_mail(em, send_to):
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as smtp_server:
         smtp_server.login(gmail, gmail_password)
         smtp_server.sendmail(gmail, send_to, em.as_string())
 
+
 def check_code(email, code):
     username = get_username_from_email(email)
     print(str_to_date(users[username]["valid_until"]))
-    if(str_to_date(users[username]["valid_until"]) < datetime.now()):
+    if (str_to_date(users[username]["valid_until"]) < datetime.now()):
         return "time"
     elif (int(users[username]['last_code']) != int(code)):
         return "code"
     else:
         return "ok"
 
+
 def str_to_date(str):
     format = "%Y-%m-%d %H:%M:%S.%f"
     return datetime.strptime(str, format)
 
+
 def signup_user(user):
-    user.password = bcrypt.hashpw(user.password.encode('utf-8') + pepper, user.salt)
+    user.password = bcrypt.hashpw(
+        user.password.encode('utf-8') + pepper, user.salt)
     user_dict = user.to_dict()
     users[user.username] = user_dict
     update_users()
+
 
 def send_verification(email):
     code = random.randint(100000, 999999)
@@ -162,54 +175,67 @@ def send_verification(email):
 
     username = get_username_from_email(email)
     users[username]["last_code"] = code
-    users[username]["valid_until"] = str(timedelta(minutes=30) + datetime.now())
+    users[username]["valid_until"] = str(
+        timedelta(minutes=30) + datetime.now())
     update_users()
+
 
 def verify_user(username):
     users[username]["verified"] = True
     update_users()
+
 
 def delete_user(username):
     del users[username]
     logout(id)
     update_users()
 
-def encrypt_pwd(text, shift = ceaser_shift):
+
+def encrypt_pwd(text, shift=ceaser_shift):
     encrypt_pwded_text = ""
     for char in text:
         if char.isalpha():
             if char.islower():
-                encrypt_pwded_text += chr((ord(char) -ord('a') + shift) % 26 + ord('a'))
+                encrypt_pwded_text += chr((ord(char) -
+                                          ord('a') + shift) % 26 + ord('a'))
             else:
-                encrypt_pwded_text += chr((ord(char) -ord('A') + shift) % 26 + ord('A'))
+                encrypt_pwded_text += chr((ord(char) -
+                                          ord('A') + shift) % 26 + ord('A'))
         else:
             encrypt_pwded_text += char
     return encrypt_pwded_text
 
+
 def decrypt_pwd(text):
     return encrypt_pwd(text, -ceaser_shift)
+
 
 def change_password(email, new_password):
     username = get_username_from_email(email)
     new_salt = bcrypt.gensalt()
     users[username]["salt"] = new_salt.decode()
-    new_password_hash = bcrypt.hashpw(new_password.encode('utf-8') + pepper, new_salt)
+    new_password_hash = bcrypt.hashpw(
+        new_password.encode('utf-8') + pepper, new_salt)
     users[username]['password'] = new_password_hash.decode()
 
     update_users()
-    
+
     for user in clients.keys():
         if clients[user].user == users[username]["username"]:
             logout(user)
 
+
 def logout(id):
     clients[id].user = "guest"
+
 
 def login(id, username):
     clients[id].user = username
 
+
 def dead(id):
     clients[id].user = "dead"
+
 
 def logtcp(dir, tid, byte_data):
     if dir == 'sent':
@@ -230,7 +256,6 @@ def send_data(sock, tid, bdata):
     logtcp('sent', tid, to_send_decrypted)
 
 
-
 def protocol_build_reply(request, id):
 
     fields = request.decode()
@@ -246,7 +271,7 @@ def protocol_build_reply(request, id):
         enc_pwd = fields[2]
         dec_pwd = decrypt_pwd(enc_pwd)
         if (is_login_valid(username, dec_pwd)):
-            if(not users[username]["verified"]):
+            if (not users[username]["verified"]):
                 reply = "ERRR|010|User not verified"
             else:
                 email = users[username]["email"]
@@ -263,7 +288,7 @@ def protocol_build_reply(request, id):
         dec_pwd = decrypt_pwd(enc_pwd)
         if (user_exists(username)):
             reply = "ERRR|005|Username already registered"
-        elif(email_registered(email)):
+        elif (email_registered(email)):
             reply = "ERRR|006|Email address already registered"
         else:
             user = User(email, username, tz, dec_pwd)
@@ -273,7 +298,7 @@ def protocol_build_reply(request, id):
     elif (code == "FOPS"):
         email = fields[1]
         if (email_registered(email)):
-            if(not users[get_username_from_email(email)]["verified"]):
+            if (not users[get_username_from_email(email)]["verified"]):
                 reply = "ERRR|010|User not verified"
             else:
                 send_reset_mail(email)
@@ -289,26 +314,26 @@ def protocol_build_reply(request, id):
         if (res == "ok"):
             change_password(email, dec_new_pwd)
             reply = f"PASS|{email}|{enc_new_pwd}"
-        elif(res == "code"):
+        elif (res == "code"):
             reply = "ERRR|008|Code not matching try again"
         else:
             reply = "ERRR|009|Code validation time ran out"
-    elif(code == "LOGU"):
+    elif (code == "LOGU"):
         logout(id)
         reply = "LUGR"
-    elif(code == "SVER"):
+    elif (code == "SVER"):
         email = fields[1]
-        
+
         if (email_registered(email)):
             username = get_username_from_email(email)
-            if(users[username]["verified"]):
+            if (users[username]["verified"]):
                 reply = "ERRR|011|Already verified"
             else:
                 send_verification(email)
                 reply = f"VERS|{email}"
         else:
             reply = "ERRR|007|Email is not registered"
-    elif(code == "VERC"):
+    elif (code == "VERC"):
         email = fields[1]
         code = fields[2]
         if (email_registered(email)):
@@ -317,15 +342,15 @@ def protocol_build_reply(request, id):
             if (res == "ok"):
                 verify_user(username)
                 reply = f"VERR|{username}"
-            elif(res == "code"):
+            elif (res == "code"):
                 reply = "ERRR|008|Code not matching try again"
             else:
                 reply = "ERRR|009|Code validation time ran out"
         else:
             reply = "ERRR|007|Email is not registered"
-    elif(code == "DELU"):
+    elif (code == "DELU"):
         username = fields[1]
-        if(user_exists(username)):
+        if (user_exists(username)):
             delete_user(username)
 
             reply = f"DELR|{username}"
@@ -370,6 +395,7 @@ def recv_data(sock, tid):
     except Exception as err:
         print(traceback.format_exc())
 
+
 def decode_data(data):
     return rsa.decrypt(data, private_key)
 
@@ -381,18 +407,18 @@ def send_key(sock, tid):
     to_send = key_len + key_to_send
     logtcp('sent', tid, to_send)
     sock.send(to_send)
-    
+
 
 def recv_key(sock, tid):
     key_len_b = b""
-    while(len(key_len_b)<4):
+    while (len(key_len_b) < 4):
         key_len_b += sock.recv(4 - len(key_len_b))
     key_len = int(struct.unpack("!l", key_len_b)[0])
 
     key_binary = b""
-    while(len(key_binary) < key_len):
+    while (len(key_binary) < key_len):
         key_binary += sock.recv(key_len - len(key_binary))
-    
+
     logtcp('recv', tid, key_len_b + key_binary)
     return rsa.PublicKey.load_pkcs1(key_binary)
 
@@ -405,7 +431,7 @@ def handle_client(sock, tid, addr):
     c_public_key = recv_key(sock, tid)
     send_key(sock, tid)
     clients[tid] = Client(tid, "guest", c_public_key)
-    
+
     while not finish:
         if all_to_die:
             print('will close due to main server issue')
@@ -432,14 +458,16 @@ def handle_client(sock, tid, addr):
     dead(tid)
     sock.close()
 
+
 def create_keys():
     public_key, private_key = rsa.newkeys(1024)
-    if(not os.path.isfile(f"{os.path.dirname(os.path.abspath(__file__))}/keys/public.pem")):
+    if (not os.path.isfile(f"{os.path.dirname(os.path.abspath(__file__))}/keys/public.pem")):
         with open(f"{os.path.dirname(os.path.abspath(__file__))}/keys/public.pem", "wb") as f:
             f.write(public_key.save_pkcs1("PEM"))
-    if(not os.path.isfile(f"{os.path.dirname(os.path.abspath(__file__))}/keys/private.pem")):
+    if (not os.path.isfile(f"{os.path.dirname(os.path.abspath(__file__))}/keys/private.pem")):
         with open(f"{os.path.dirname(os.path.abspath(__file__))}/keys/private.pem", "wb") as f:
             f.write(private_key.save_pkcs1("PEM"))
+
 
 def load_keys():
     global public_key, private_key
@@ -447,6 +475,7 @@ def load_keys():
         public_key = rsa.PublicKey.load_pkcs1(f.read())
     with open(f"{os.path.dirname(os.path.abspath(__file__))}/keys/private.pem", "rb") as f:
         private_key = rsa.PrivateKey.load_pkcs1(f.read())
+
 
 def main(addr):
     global all_to_die
@@ -470,7 +499,8 @@ def main(addr):
     print('Main thread: before accepting ...\n')
     while True:
         cli_sock, addr = srv_sock.accept()
-        t = threading.Thread(target=handle_client, args=(cli_sock, str(i), addr))
+        t = threading.Thread(target=handle_client,
+                             args=(cli_sock, str(i), addr))
         t.start()
         i += 1
         threads.append(t)
