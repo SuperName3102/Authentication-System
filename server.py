@@ -21,7 +21,7 @@ ceaser_shift = 5
 users_file = f"{os.path.dirname(os.path.abspath(__file__))}\\users.json"
 gmail = "idancyber3102@gmail.com"
 gmail_password = "nkjg eaom gzne nyfa"
-pepper = b"VerYGOdPePPEr"
+pepper = b"VerYGOdPePPErY"
 clients = {}
 
 class Client:
