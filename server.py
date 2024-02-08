@@ -61,11 +61,10 @@ class User:
         class_dict = {}
         class_variables = vars(self)
         for var_name, var_value in class_variables.items():
-            if(var_name == "password" or var_name == "salt"):
+            if (var_name == "password" or var_name == "salt"):
                 var_value = var_value.decode()
             class_dict[var_name] = var_value
         return class_dict
-        
 
     def to_json(self):
         return json.dumps(self.to_dict())
@@ -102,6 +101,7 @@ def read_users():
         existing_users = json.load(file)
     return existing_users
 
+
 def update_users():
     """
     Updating user database with new users information
@@ -118,12 +118,13 @@ def user_exists(username):
     else:
         return False
 
+
 def email_registered(email):
     """
     Checking if email address is already registered under an account 
     """
     for user in users:
-        if(users[user]["email"] == email):
+        if (users[user]["email"] == email):
             return True
     return False
 
@@ -186,8 +187,9 @@ def get_username_from_email(email):
     Helper function
     """
     for user in users:
-        if(users[user]["email"] == email):
+        if (users[user]["email"] == email):
             return users[user]["username"]
+
 
 def send_reset_mail(email):
     """
@@ -199,7 +201,8 @@ def send_reset_mail(email):
     code = random.randint(100000, 999999)   # Setting new code and updating user
     username = get_username_from_email(email)
     users[username]['last_code'] = code
-    users[username]["valid_until"] = str(timedelta(minutes=10) + datetime.now())
+    users[username]["valid_until"] = str(
+        timedelta(minutes=10) + datetime.now())
     update_users()
     
     em = EmailMessage()   # Building mail and sending it
@@ -231,6 +234,7 @@ def send_verification(email):
     em.set_content(body)
     send_mail(em, email)
 
+
 def send_mail(em, send_to):
     """
     Sending email to email address
@@ -240,6 +244,7 @@ def send_mail(em, send_to):
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as smtp_server:
         smtp_server.login(gmail, gmail_password)
         smtp_server.sendmail(gmail, send_to, em.as_string())
+
 
 def check_code(email, code):
     """
@@ -253,6 +258,7 @@ def check_code(email, code):
         return "code"
     else:
         return "ok"
+
 
 def str_to_date(str):
     """
@@ -272,7 +278,8 @@ def change_password(email, new_password):
     username = get_username_from_email(email)
     new_salt = bcrypt.gensalt()
     users[username]["salt"] = new_salt.decode()
-    new_password_hash = bcrypt.hashpw(new_password.encode('utf-8') + pepper, new_salt)
+    new_password_hash = bcrypt.hashpw(
+        new_password.encode('utf-8') + pepper, new_salt)
     users[username]['password'] = new_password_hash.decode()
 
     update_users()
