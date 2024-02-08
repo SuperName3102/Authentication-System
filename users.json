@@ -13,10 +13,10 @@
     "email": "idanh3102@gmail.com",
     "username": "idan",
     "tz": "330905159",
-    "password": "$2b$12$fzql8cnhRfXGHsuB5VG2VOnTJjUDy.CTyORcSVJ7vWghLQkJ8NuMi",
-    "salt": "$2b$12$fzql8cnhRfXGHsuB5VG2VO",
-    "last_code": 447418,
-    "valid_until": "2024-02-01 20:06:09.908649",
+    "password": "$2b$12$2Bzc9dxXu2tln7NwvMH6FuYJEOXiCBjnoSL1Pf46DwnT517LIH8zG",
+    "salt": "$2b$12$2Bzc9dxXu2tln7NwvMH6Fu",
+    "last_code": 991239,
+    "valid_until": "2024-02-08 21:52:35.844520",
     "verified": true
   },
   "idan12": {
@@ -78,5 +78,35 @@
     "last_code": 820022,
     "valid_until": "2024-02-04 09:41:44.843141",
     "verified": true
+  },
+  "Tomnir007": {
+    "email": "niryo2007@gmail.com",
+    "username": "Tomnir007",
+    "tz": "333333333",
+    "password": "$2b$12$hWRg.oqtnkXJyVIQ9z7HUuQL5h/b48/7zgamOZpYDcN7tYCJ5oLBC",
+    "salt": "$2b$12$hWRg.oqtnkXJyVIQ9z7HUu",
+    "last_code": 203510,
+    "valid_until": "2024-02-08 09:13:10.026733",
+    "verified": true
+  },
+  "dydgyd": {
+    "email": "dalalitamar@gmail.com",
+    "username": "dydgyd",
+    "tz": "454555555",
+    "password": "$2b$12$tKfE3NFOve1aVT4O7usO3.4mPSbWsEtKs1wprVL09vWeQVeMUReHK",
+    "salt": "$2b$12$tKfE3NFOve1aVT4O7usO3.",
+    "last_code": 283092,
+    "valid_until": "2024-02-08 13:36:03.730177",
+    "verified": true
+  },
+  "hdeidhe": {
+    "email": "jijijijij@gmail.co",
+    "username": "hdeidhe",
+    "tz": "456456456",
+    "password": "$2b$12$jen/R/IwLMv9WKmIF/5tvOSnNloosK/f4qD9EasLVXvrauIaz.mY.",
+    "salt": "$2b$12$jen/R/IwLMv9WKmIF/5tvO",
+    "last_code": -1,
+    "valid_until": "2024-02-08 13:15:40.005871",
+    "verified": false
   }
 }
