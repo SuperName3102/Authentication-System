@@ -1,20 +1,21 @@
 # 2024 © Idan Hazay
 # Import libraries
-
-from modules import encrypting
-
-import tkinter as tk
-from tkinter import ttk
-from ttkthemes import ThemedTk
-from tkinter.ttk import *
 import socket
 import sys
 import traceback
+import tkinter as tk
 from tkinter.messagebox import askyesno
 from tkinter import messagebox
+from tkinter import ttk
+from ttkthemes import ThemedTk
+from tkinter.ttk import *
 import re
 import rsa
 import struct
+import hashlib
+from Crypto import Random
+from Crypto.Cipher import AES
+from base64 import b64encode, b64decode
 import os
 
 
@@ -255,6 +256,8 @@ def toggle_password_visibility(pwd_widget, checkbox_var):
     else:
         pwd_widget["show"] = "*"
 
+
+
 # Begin server requests related functions
 
 def login(username, password):
@@ -264,7 +267,7 @@ def login(username, password):
     items = [username, password]
     if (is_empty(items) or check_illegal_chars(items)):
         return
-    send_string = build_req_string("LOGN", items)
+    send_string = b"LOGN|" + username.encode() + b"|" + password.encode()
     send_data(send_string)
     handle_reply()
 
@@ -274,7 +277,7 @@ def logout():
     """
     global logged_in_user
     logged_in_user = {}
-    send_string = build_req_string("LOGU")
+    send_string = b"LOGU"
     send_data(send_string)
     handle_reply()
 
@@ -282,10 +285,10 @@ def signup(email, username, tz, password):
     """
     Send signup request to server
     """
-    items = [email, username, tz, password]
+    items = [email, username, password]
     if (is_empty(items) or check_illegal_chars(items) or not is_valid_email(email) or not is_valid_tz(tz) or not is_valid_password(password) or not is_valid_username(username)):
         return
-    send_string = build_req_string("SIGU", items)
+    send_string = b"SIGU|" + email.encode() + b"|" + username.encode() + b"|" + tz.encode()+ b"|" + password.encode()
     send_data(send_string)
     handle_reply()
 
@@ -296,7 +299,7 @@ def reset_password(email):
     items = [email]
     if (is_empty(items) or check_illegal_chars(items)):
         return
-    send_string = build_req_string("FOPS", items)
+    send_string = b"FOPS|" + email.encode()
     send_data(send_string)
     handle_reply()
 
@@ -307,7 +310,7 @@ def password_recovery(email, code, new_password):
     items = [email, code, new_password]
     if (is_empty(items) or check_illegal_chars(items) or not is_valid_password(new_password)):
         return
-    send_string = build_req_string("PASR", items)
+    send_string = b"PASR|" + email.encode() + b"|" + code.encode() + b"|" + new_password.encode()
     send_data(send_string)
     handle_reply()
 
@@ -318,7 +321,7 @@ def send_verification(email):
     items = [email]
     if (is_empty(items) or check_illegal_chars(items) or not is_valid_email(email)):
         return
-    send_string = build_req_string("SVER", items)
+    send_string = b"SVER|" + email.encode()
     send_data(send_string)
     handle_reply()
 
@@ -326,10 +329,10 @@ def send_verify_code(email, code):
     """
     Send verification code to server for confirmation
     """
-    items = [email, code]
+    items = [email]
     if (is_empty(items) or check_illegal_chars(items) or not is_valid_email(email)):
         return
-    send_string = build_req_string("VERC", items)
+    send_string = b"VERC|" + email.encode() + b"|" + code.encode()
     send_data(send_string)
     handle_reply()
 
@@ -341,7 +344,7 @@ def delete_user(username):
         items = [username]
         if (is_empty(items) or check_illegal_chars(items) or not is_valid_username(username)):
             return
-        send_string = build_req_string("DELU", items)
+        send_string = b"DELU|" + username.encode()
         send_data(send_string)
         handle_reply()
 
@@ -349,20 +352,11 @@ def exit_program():
     """
     Send exit request to server
     """
-    send_string = build_req_string("EXIT")
+    send_string = b"EXIT"
     send_data(send_string)
     handle_reply()
 
-def build_req_string(code, values = []):
-    """
-    Builds a request string
-    Gets string code and list of string values
-    """
-    send_string = code
-    for value in values:
-        send_string += sep
-        send_string += value
-    return send_string.encode()
+
 
 # Begin validation checking related functions 
 
@@ -457,6 +451,57 @@ def check_illegal_chars(string_list):
     return any(has_illegal_chars(s) for s in string_list)
 
 
+
+# Begin encryption related functions
+
+class AESCipher(object):
+    def __init__(self, key):
+        """
+        Definitation of the class
+        Decryption/encryption key and AES block size
+        """
+        self.block_size = AES.block_size
+        self.key = hashlib.sha256(key).digest()
+
+    def encrypt(self, plain_text):
+        """
+        Encryption function
+        Adds necessary padding to match block size
+        """
+        plain_text = self.__pad(plain_text)
+        iv = Random.new().read(self.block_size)
+        cipher = AES.new(self.key, AES.MODE_CBC, iv)
+        encrypted_text = cipher.encrypt(plain_text)
+        return b64encode(iv + encrypted_text).decode("utf-8")
+
+    def decrypt(self, encrypted_text):
+        """
+        Decryption function
+        Remove added padding to match block size
+        """
+        encrypted_text = b64decode(encrypted_text)
+        iv = encrypted_text[:self.block_size]
+        cipher = AES.new(self.key, AES.MODE_CBC, iv)
+        plain_text = cipher.decrypt(encrypted_text[self.block_size:]).decode("utf-8")
+        return self.__unpad(plain_text)
+
+    def __pad(self, plain_text):
+        """
+        Adds padding to test to match AES block size
+        """
+        number_of_bytes_to_pad = self.block_size - len(plain_text) % self.block_size
+        ascii_string = chr(number_of_bytes_to_pad)
+        padding_str = number_of_bytes_to_pad * ascii_string
+        padded_plain_text = plain_text + padding_str.encode()
+        return padded_plain_text
+
+    @staticmethod
+    def __unpad(plain_text):
+        """
+        Removes padding to test to match AES block size
+        """
+        last_character = plain_text[len(plain_text) - 1:]
+        return plain_text[:-ord(last_character)]
 
 def recv_rsa_key():
     """
@@ -576,7 +621,6 @@ def protocol_parse_reply(reply):
         elif code == 'VERR':   # Verification succeeded
             username = fields[1]
             to_show = f'Verification for user {username} was succesfull'
-            messagebox.showinfo("Verification successful", f"Verification for user {username} completed.\n You may now log in to your account")
             show_main_page()
         
         elif code == 'DELR':   # User deletion succeeded
@@ -637,7 +681,7 @@ def send_data(bdata):
     Adds length
     Loggs the encrypted and decrtpted data for readablity
     """
-    encrypted_data = encrypting.encrypt(bdata, shared_secret)
+    encrypted_data = AESCipher(shared_secret).encrypt(bdata)
     data_len = struct.pack('!l', len(encrypted_data))
 
     to_send_encrypted = data_len + sep.encode() + encrypted_data.encode()
@@ -674,7 +718,7 @@ def recv_data():
             msg += chunk
         
         logtcp('recv', b_len + sep.encode() + msg)   # Log encrypted data
-        msg = encrypting.decrypt(msg, shared_secret).encode()
+        msg = AESCipher(shared_secret).decrypt(msg).encode()
         entire_data += msg
         return entire_data
     
@@ -692,7 +736,6 @@ def main(addr):
     Connect to server via addr param
     """
     global sock
-    global root
     sock = socket.socket()
     try:
         sock.connect(addr)

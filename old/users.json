@@ -1,0 +1,22 @@
+{
+  "idan": {
+    "email": "idanh3102@gmail.com",
+    "username": "idan",
+    "tz": "330905159",
+    "password": "$2b$12$Pd6yNjppAn9fjc5lBbovzuJTjU9CgWZwrMoTgDIgUXRbDiJThk5Ui",
+    "salt": "$2b$12$Pd6yNjppAn9fjc5lBbovzu",
+    "last_code": 745465,
+    "valid_until": "2024-02-17 11:45:06.946057",
+    "verified": true
+  },
+  "idan1": {
+    "email": "hazanyidan@gmail.com",
+    "username": "idan1",
+    "tz": "330905159",
+    "password": "$2b$12$uRHXTLl1s/J9t8qRjTahpOiV6EEc95p4Ci1NuhgAorn42fk3V/hx.",
+    "salt": "$2b$12$uRHXTLl1s/J9t8qRjTahpO",
+    "last_code": 421006,
+    "valid_until": "2024-02-17 11:55:35.974147",
+    "verified": true
+  }
+}
