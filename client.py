@@ -624,7 +624,7 @@ def logtcp(dir, byte_data):
     """
     Loggs the recieved data to console
     """
-    if dir == 'sent':
+    if dir == 'sent':   # Sen/recieved labels
         print(f'C LOG:Sent     >>>{byte_data}')
     else:
         print(f'C LOG:Recieved <<<{byte_data}')
