@@ -74,11 +74,11 @@ def email_registered(email):
     if user != None: return True
     else: return False
 
-def login_validation(username, password):
+def login_validation(cred, password):
     """
     Checking if login details match user in database
     """
-    user = db.get_user(username)
+    user = db.get_user(cred)
     if (user == None): return False
     user = User(**user)
     if (user.password == hash_password(password, user.salt)):

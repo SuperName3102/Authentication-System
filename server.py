@@ -109,13 +109,14 @@ def protocol_build_reply(request, id):
         clients[id].user = "dead"
     
     elif (code == "LOGN"):   # Client requests login
-        username = fields[1]
+        cred = fields[1]
         pwd = fields[2]
-        if (cr.login_validation(username, pwd)):
-            if(not cr.verified(username)):
+        if (cr.login_validation(cred, pwd)):
+            if(not cr.verified(cred)):
                 reply = f"ERRR{sep}010{sep}User not verified"
             else:
-                user_dict = cr.get_user_data(username)
+                user_dict = cr.get_user_data(cred)
+                username = user_dict["username"]
                 email = user_dict["email"]
                 tz = user_dict["tz"]
                 clients[id].user = username
@@ -227,11 +228,15 @@ def logtcp(dir, tid, byte_data):
     """
     Loggs the recieved data to console
     """
+    try:
+        if (str(byte_data[0]) == "0"):
+            print("")
+    except AttributeError:
+        return
     if dir == 'sent':
         print(f'{tid} S LOG:Sent     >>> {byte_data}')
     else:
         print(f'{tid} S LOG:Recieved <<< {byte_data}')
-    print("\n")
 
 def send_data(sock, tid, bdata):
     """

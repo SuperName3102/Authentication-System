@@ -7,6 +7,9 @@ import tkinter as tk
 from tkinter import ttk
 from ttkthemes import ThemedTk
 from tkinter.ttk import *
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
+
 import socket
 import sys
 import traceback
@@ -33,9 +36,9 @@ def create_root():
     Global var to use in code
     """
     global root
-    root = ThemedTk(theme="equilux")
-    root.tk.call('tk', 'scaling', 1.5)
-    root.configure(bg="#464646")
+    root = ttk.Window(themename="cyborg")
+    root.tk.call('tk', 'scaling', 4)
+    #root.configure(bg="#464646")
 
 def create_style():
     """
@@ -45,11 +48,11 @@ def create_style():
     styles = []
     
     main_btn_style = Style()
-    main_btn_style.configure('main.TButton', background="#363636",  font =('calibri', 16),  padding=4)
+    main_btn_style.configure('main.TButton',   font =('calibri', 20),  padding=4)
     styles.append(main_btn_style)
 
     reg_btn_style = Style()
-    reg_btn_style.configure('reg.TButton', background="#363636", font =('calibri', 13), padding=3)
+    reg_btn_style.configure('reg.TButton',  font =('calibri', 13), padding=3)
     styles.append(reg_btn_style)
 
     entry_style = Style()
@@ -97,7 +100,7 @@ def login_page():
     show_hide_var = tk.BooleanVar()
     
     ttk.Label(root, text="Login Page", style="main.TLabel").pack(pady=30)
-    ttk.Label(root, text="Username:", style="sub.TLabel").pack()   # Username field and label
+    ttk.Label(root, text="Username/Email:", style="sub.TLabel").pack()   # Username field and label
     ttk.Entry(root, textvariable=username, style="field.TEntry", width=30, font=("calibri", 12)).pack(ipady=3, pady=2)
     ttk.Label(root, text="").pack(pady=6)
     
@@ -175,7 +178,8 @@ def show_logged_in_page():
     ttk.Label(root, text=f"ID: {user["tz"]}", style="sub.TLabel").pack(pady=10)
     ttk.Label(root, text=f"Password: {user["password"]}", style="sub.TLabel").pack(pady=10)
     ttk.Button(root, text="Logout", command=lambda: logout(), style="reg.TButton").pack(pady=10)
-    ttk.Button(root, text="Delete User", command=lambda: delete_user(user["username"]), style="reg.TButton").pack()
+    ttk.Button(root, text="Delete User", command=lambda: delete_user(user["username"]), style="reg.TButton").pack(pady = 10)
+    ttk.Button(root, text="Exit", command=lambda: exit_program(), style="reg.TButton").pack(pady = 10)
 
 def show_recovery_page(email):
     """
@@ -257,11 +261,11 @@ def toggle_password_visibility(pwd_widget, checkbox_var):
 
 # Begin server requests related functions
 
-def login(username, password):
+def login(cred, password):
     """
     Send login request to server
     """
-    items = [username, password]
+    items = [cred, password]
     if (is_empty(items) or check_illegal_chars(items)):
         return
     send_string = build_req_string("LOGN", items)
@@ -624,11 +628,17 @@ def logtcp(dir, byte_data):
     """
     Loggs the recieved data to console
     """
+    try:
+        if (str(byte_data[0]) == "0"):
+            print("")
+    except AttributeError:
+        return
     if dir == 'sent':   # Sen/recieved labels
         print(f'C LOG:Sent     >>>{byte_data}')
     else:
         print(f'C LOG:Recieved <<<{byte_data}')
-    print("\n")
+        
+
 
 def send_data(bdata):
     """
