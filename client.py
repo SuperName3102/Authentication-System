@@ -10,6 +10,7 @@ from tkinter.ttk import *
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 
+import random
 import socket
 import sys
 import traceback
@@ -19,6 +20,7 @@ import re
 import rsa
 import struct
 import os
+from primePy import primes
 
 
 # Announce global vars
@@ -26,7 +28,7 @@ len_field = 4
 sep = "|"
 illegal_chars = {'\'', '"', '>', '<', '~', '`', '|', '\\','/', '}', '{', '[', ']', '+', '=', ';', '(', ')'}
 user = {}
-
+encryption = False
 
 # Begin gui related functions
 
@@ -242,6 +244,18 @@ def show_account_verification_page(email):
     ttk.Label(root, text="").pack(pady=5)   # Send verification code and back buttons 
     ttk.Button(root, text="Back to Main Page", command=lambda: show_main_page(), style="reg.TButton").pack()
 
+def show_keyswitch_page():
+    """
+    Show the key switching protocol page of the gui
+    Destroying all previous widgets
+    """
+    destroy_widgets()
+    protocol = tk.StringVar()   # Creating tkinter string vars for inputs
+    
+    ttk.Label(root, text="Protocol Choose Page", style="main.TLabel").pack(pady=35)
+    Radiobutton(root, text="RSA", variable=protocol, value=1, command=lambda: rsa_exchange()).pack()
+    Radiobutton(root, text="Diffie-Hellman", variable=protocol, value=2, command=lambda: diffie_hellman()).pack()
+
 def destroy_widgets():
     """
     Destroying all current widgets
@@ -298,7 +312,7 @@ def reset_password(email):
     Send password reset request to server
     """
     items = [email]
-    if (is_empty(items) or check_illegal_chars(items)):
+    if (is_empty(items) or check_illegal_chars(items) or not is_valid_email(email)):
         return
     send_string = build_req_string("FOPS", items)
     send_data(send_string)
@@ -460,7 +474,15 @@ def check_illegal_chars(string_list):
     """
     return any(has_illegal_chars(s) for s in string_list)
 
+# Key exchange
 
+def rsa_exchange():
+    global encryption
+    send_data(b"RSAR")
+    recv_rsa_key()
+    send_shared_secret()
+    encryption = True
+    show_main_page()
 
 def recv_rsa_key():
     """
@@ -492,9 +514,33 @@ def send_shared_secret():
     key_to_send = rsa.encrypt(shared_secret, s_public_key)
     key_len = struct.pack("!l", len(key_to_send))
     to_send = key_len + key_to_send
-    logtcp('sent', to_send)
     sock.send(to_send)
 
+def diffie_hellman():
+    global shared_secret
+    global encryption
+    g = random.randint(1000000000000000000000,9999999999999999999999)
+    p = primes.between(random.randint(1000,9999), random.randint(10000,99999))[0]
+    to_send = f"DIFG{sep}{g}{sep}{p}"
+    send_data(to_send.encode())
+    
+    if(recv_data().split(b"|")[1] != b"DIFA"):
+        return
+    private_key = random.randint(10, 25)
+    public_key = pow(g, private_key) % p
+    to_send = f"DIFP{sep}{public_key}"
+    
+    send_data(to_send.encode())
+    serv_pub_key_data = recv_data()
+    params = serv_pub_key_data.split(b"|")
+    if(params[1] != b"DIFR" or len(params) != 3):
+        return
+    serv_pub_key = int(params[2].decode())
+    shared_secret = pow(serv_pub_key, private_key) % p
+    shared_secret = shared_secret.to_bytes(16, byteorder='big')
+    print(shared_secret)
+    encryption = True
+    show_main_page()
 
 
 # Begin server replies handling functions
@@ -646,16 +692,21 @@ def send_data(bdata):
     Adds data encryption
     Adds length
     Loggs the encrypted and decrtpted data for readablity
+    Checks if encryption is used
     """
-    encrypted_data = encrypting.encrypt(bdata, shared_secret)
-    data_len = struct.pack('!l', len(encrypted_data))
-
-    to_send_encrypted = data_len + sep.encode() + encrypted_data.encode()
-    to_send_decrypted = str(len(bdata)).encode() + sep.encode() + bdata
-
-    sock.send(to_send_encrypted)
-    logtcp('sent', to_send_encrypted)
-    logtcp('sent', to_send_decrypted)
+    if(encryption):
+        encrypted_data = encrypting.encrypt(bdata, shared_secret)
+        data_len = struct.pack('!l', len(encrypted_data))
+        to_send = data_len + sep.encode() + encrypted_data.encode()
+        to_send_decrypted = str(len(bdata)).encode() + sep.encode() + bdata
+        logtcp('sent', to_send)
+        logtcp('sent', to_send_decrypted)
+    else:
+        data_len = struct.pack('!l', len(bdata))
+        to_send = data_len + sep.encode() + bdata
+        logtcp('sent', to_send)
+    
+    sock.send(to_send)
 
 def recv_data():
     """
@@ -683,14 +734,15 @@ def recv_data():
                 break
             msg += chunk
         
-        logtcp('recv', b_len + sep.encode() + msg)   # Log encrypted data
-        msg = encrypting.decrypt(msg, shared_secret).encode()
+        if(encryption): # If encryption is enabled decrypt and log encrypted
+            logtcp('recv', b_len + sep.encode() + msg)   # Log encrypted data
+            msg = encrypting.decrypt(msg, shared_secret).encode()
+        
         entire_data += msg
         return entire_data
     
     except Exception as err:
         print(traceback.format_exc())
-
 
 
 # Main function and start of code
@@ -712,11 +764,9 @@ def main(addr):
             f'Error while trying to connect.  Check ip or port -- {addr}')
         return
     try:
-        recv_rsa_key()
-        send_shared_secret()
         create_root()
         create_style()
-        show_main_page()
+        show_keyswitch_page()
         root.mainloop()
     except Exception as e:
         print("Error:" + str(e))

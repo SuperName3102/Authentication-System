@@ -11,7 +11,7 @@ import threading
 import os
 import rsa
 import struct
-
+import random
 
 # Announce global vars
 all_to_die = False  
@@ -25,10 +25,11 @@ class Client:
     """
     Client class for handling a client
     """
-    def __init__(self, id, user, shared_secret):
+    def __init__(self, id, user, shared_secret, encryption):
         self.id = id
         self.user = user
         self.shared_secret = shared_secret
+        self.encryption = encryption
 
 # Key exchange 
 def create_keys():
@@ -85,6 +86,29 @@ def recv_shared_secret(sock, tid):
     shared_secret = rsa.decrypt(key_binary, private_key)
     return shared_secret
 
+def rsa_exchange(sock, tid):
+    send_rsa_key(sock, tid)
+    return recv_shared_secret(sock, tid)
+
+def diffie_hellman(sock, tid, g, p):
+    private_key = random.randint(10, 25)
+    public_key = pow(g, private_key) % p
+    send_data(sock, tid, b"DIFA")
+    
+    client_pub_key_data = recv_data(sock, tid)
+    params = client_pub_key_data.split(b"|")
+    if(params[1] != b"DIFP" or len(params) != 3):
+        return
+    client_pub_key = int(params[2].decode())
+    dh_key = pow(client_pub_key, private_key) % p
+    dh_key = dh_key.to_bytes(16, byteorder='big')
+    print(dh_key)
+    clients[tid].shared_secret = dh_key
+    
+    to_send = f"DIFR{sep}{public_key}"
+    send_data(sock, tid, to_send.encode())
+    
+    return dh_key
 
 
 # Begin client replies building functions
@@ -244,16 +268,21 @@ def send_data(sock, tid, bdata):
     Adds data encryption
     Adds length
     Loggs the encrypted and decrtpted data for readablity
+    Checks if encryption is used
     """
-    encrypted_data = encrypting.encrypt(bdata, clients[tid].shared_secret)
-    data_len = struct.pack('!l', len(encrypted_data))
-
-    to_send_encrypted = data_len + sep.encode() + encrypted_data.encode()
-    to_send_decrypted = str(len(bdata)).encode() + sep.encode() + bdata
-
-    sock.send(to_send_encrypted)
-    logtcp('sent', tid, to_send_encrypted)
-    logtcp('sent', tid, to_send_decrypted)
+    if(clients[tid].encryption):
+        encrypted_data = encrypting.encrypt(bdata, clients[tid].shared_secret)
+        data_len = struct.pack('!l', len(encrypted_data))
+        to_send = data_len + sep.encode() + encrypted_data.encode()
+        to_send_decrypted = str(len(bdata)).encode() + sep.encode() + bdata
+        logtcp('sent', tid, to_send)
+        logtcp('sent', tid, to_send_decrypted)
+    else:
+        data_len = struct.pack('!l', len(bdata))
+        to_send = data_len + sep.encode() + bdata
+        logtcp('sent', tid, to_send)
+    
+    sock.send(to_send)
 
 def recv_data(sock, tid):
     """
@@ -281,8 +310,9 @@ def recv_data(sock, tid):
                 break
             msg += chunk
         
-        logtcp('recv', tid, b_len + sep.encode() + msg)   # Log encrypted data
-        msg = encrypting.decrypt(msg, clients[tid].shared_secret).encode()
+        if(tid in clients and clients[tid].encryption): # If encryption is enabled decrypt and log encrypted
+            logtcp('recv', tid, b_len + sep.encode() + msg)   # Log encrypted data
+            msg = encrypting.decrypt(msg, clients[tid].shared_secret).encode()
         entire_data += msg
         return entire_data
     
@@ -300,12 +330,29 @@ def handle_client(sock, tid, addr):
     """
     global all_to_die
     global clients
-    
-    finish = False
-    print(f'New Client number {tid} from {addr}')
-    send_rsa_key(sock, tid)
-    shared_secret = recv_shared_secret(sock, tid)
-    clients[tid] = Client(tid, "guest", shared_secret)   # Setting client state
+    try:
+        finish = False
+        print(f'New Client number {tid} from {addr}')
+        start = recv_data(sock, tid)
+        code = start.split(b"|")[1]
+        clients[tid] = Client(tid, "guest", None, False)   # Setting client state
+        if (code == b"RSAR"):
+            shared_secret = rsa_exchange(sock, tid)
+        elif(code == b"DIFG"):
+            shared_secret = diffie_hellman(sock, tid, int(start.split(b"|")[2].decode()), int(start.split(b"|")[3].decode()))
+        if(shared_secret == ""):
+            return
+
+        print(shared_secret)
+        clients[tid].shared_secret = shared_secret
+        clients[tid].encryption = True
+    except Exception:
+        print(traceback.format_exc())
+        print(f'Client {tid} connection error')   # Releasing clienk and closing socket
+        if (tid in clients):
+            clients[tid].user = "dead"
+        sock.close()
+        return
     while not finish:   # Main client loop
         if all_to_die:
             print('will close due to main server issue')
@@ -327,8 +374,9 @@ def handle_client(sock, tid, addr):
             print(traceback.format_exc())
             break
     print(f'Client {tid} Exit')   # Releasing clienk and closing socket
-    clients[id].user = "dead"
+    clients[tid].user = "dead"
     sock.close()
+
 
 def main(addr):
     """
